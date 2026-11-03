@@ -41,14 +41,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.dascon.machinerylog.data.api.MachineDto
 import com.dascon.machinerylog.data.api.MachineLogFormPayload
 import com.dascon.machinerylog.data.local.SessionStore
 import com.dascon.machinerylog.data.repo.LogRepository
 import com.dascon.machinerylog.ui.theme.DscplBlue
-import com.dascon.machinerylog.ui.theme.DscplBlueDark
+import com.dascon.machinerylog.ui.theme.DscplInk
+import com.dascon.machinerylog.ui.theme.DscplLine
+import com.dascon.machinerylog.ui.theme.DscplMist
+import com.dascon.machinerylog.ui.theme.DscplMuted
 import com.dascon.machinerylog.ui.theme.DscplRed
 import com.dascon.machinerylog.util.displayDate
 import kotlinx.coroutines.flow.first
@@ -104,30 +109,38 @@ fun LogFormScreen(
     }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = DscplInk,
+        unfocusedTextColor = DscplInk,
         focusedBorderColor = DscplBlue,
-        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        unfocusedBorderColor = DscplLine,
         focusedLabelColor = DscplBlue,
+        unfocusedLabelColor = DscplMuted,
         cursorColor = DscplBlue,
         focusedContainerColor = Color.White,
         unfocusedContainerColor = Color.White,
     )
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = DscplMist,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DscplBlueDark,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
+                    containerColor = Color.White,
+                    titleContentColor = DscplInk,
+                    navigationIconContentColor = DscplInk,
                 ),
                 title = {
                     Column {
-                        Text(machine.machineCode ?: "Machine", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                        Text(
+                            machine.machineCode ?: "Machine",
+                            color = DscplInk,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                        )
                         Text(
                             "${displayDate(logDate)} · ${machine.machineName.orEmpty()}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.75f),
+                            color = DscplMuted,
+                            fontSize = 13.sp,
                         )
                     }
                 },
@@ -153,11 +166,12 @@ fun LogFormScreen(
                         FilterChip(
                             selected = shift == code,
                             onClick = { shift = code },
-                            label = { Text(label) },
+                            label = { Text(label, fontWeight = FontWeight.SemiBold) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = DscplBlue,
                                 selectedLabelColor = Color.White,
                                 containerColor = Color.White,
+                                labelColor = DscplInk,
                             ),
                         )
                     }
@@ -218,13 +232,13 @@ fun LogFormScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(DscplBlue.copy(alpha = 0.08f))
-                        .border(1.dp, DscplBlue.copy(alpha = 0.15f), RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(DscplMist)
+                        .border(1.dp, DscplLine, RoundedCornerShape(12.dp))
                         .padding(14.dp),
                 ) {
-                    Text("Estimated closing", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("$closingPreview L", style = MaterialTheme.typography.headlineMedium, color = DscplBlueDark)
+                    Text("Estimated closing", color = DscplMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text("$closingPreview L", color = DscplInk, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -289,14 +303,14 @@ fun LogFormScreen(
                     .height(54.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = DscplRed,
+                    containerColor = DscplBlue,
                     contentColor = Color.White,
                 ),
             ) {
                 if (loading) {
                     CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.height(22.dp))
                 } else {
-                    Text("Save to Log Book", style = MaterialTheme.typography.labelLarge)
+                    Text("Save to Log Book", fontSize = 17.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(Modifier.height(28.dp))
@@ -312,15 +326,16 @@ private fun FormSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.8f), RoundedCornerShape(22.dp))
+            .border(1.5.dp, DscplLine, RoundedCornerShape(16.dp))
             .padding(16.dp),
     ) {
         Text(
             title.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = DscplMuted,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
             modifier = Modifier.padding(bottom = 12.dp),
         )
         content()
@@ -346,7 +361,7 @@ private fun BigField(
         keyboardOptions = KeyboardOptions(keyboardType = keyboard),
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        textStyle = MaterialTheme.typography.bodyLarge,
+        textStyle = androidx.compose.ui.text.TextStyle(color = DscplInk, fontSize = 17.sp),
         colors = colors,
     )
 }
