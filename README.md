@@ -1,6 +1,8 @@
 # Dascon Machine Daily Log (Android)
 
-Thin Android client for site operators. Saves into the same **Machinery → Log Book** as the web ERP (`/api/machinery/log-book`).
+Repo: https://github.com/imsubhamm/dasconapp
+
+Thin Android client for site operators (Daiya). Saves into the same **Machinery → Log Book** as the web ERP (`/api/machinery/log-book`). No separate server deploy — uses existing ERP APIs.
 
 ## What it does
 
@@ -11,17 +13,14 @@ Thin Android client for site operators. Saves into the same **Machinery → Log 
 
 ## Build / install
 
-1. Open this folder in **Android Studio**
-2. Wait for Gradle sync
-3. Run on a phone/emulator (API 26+)
-
-Or from CLI:
-
 ```bash
 export DEVELOPER_DIR=/Library/Developer/CommandLineTools
+export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
 ./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+Phone needs **USB debugging** on (Developer options) and must show up in `adb devices`.
 
 API base URL is production Railway (`BuildConfig.API_BASE_URL`). Change in `app/build.gradle.kts` for staging.
 
