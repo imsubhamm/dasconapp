@@ -1,5 +1,7 @@
 package com.dascon.machinerylog.ui.logform
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,21 +11,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,14 +39,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.dascon.machinerylog.data.api.MachineDto
 import com.dascon.machinerylog.data.api.MachineLogFormPayload
 import com.dascon.machinerylog.data.local.SessionStore
 import com.dascon.machinerylog.data.repo.LogRepository
+import com.dascon.machinerylog.ui.theme.DscplBlue
+import com.dascon.machinerylog.ui.theme.DscplBlueDark
+import com.dascon.machinerylog.ui.theme.DscplRed
 import com.dascon.machinerylog.util.displayDate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -93,13 +103,32 @@ fun LogFormScreen(
         (o + i - c).let { if (it.isFinite()) "%.2f".format(it) else "" }
     }
 
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = DscplBlue,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        focusedLabelColor = DscplBlue,
+        cursorColor = DscplBlue,
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+    )
+
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = DscplBlueDark,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                ),
                 title = {
                     Column {
-                        Text(machine.machineCode ?: "Machine", fontWeight = FontWeight.Bold)
-                        Text("${displayDate(logDate)} · ${machine.machineName.orEmpty()}")
+                        Text(machine.machineCode ?: "Machine", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                        Text(
+                            "${displayDate(logDate)} · ${machine.machineName.orEmpty()}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.75f),
+                        )
                     }
                 },
                 navigationIcon = {
@@ -114,83 +143,101 @@ fun LogFormScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Shift", fontWeight = FontWeight.SemiBold)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SHIFTS.forEach { (code, label) ->
-                    FilterChip(
-                        selected = shift == code,
-                        onClick = { shift = code },
-                        label = { Text(label) },
+            FormSection(title = "Shift") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SHIFTS.forEach { (code, label) ->
+                        FilterChip(
+                            selected = shift == code,
+                            onClick = { shift = code },
+                            label = { Text(label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = DscplBlue,
+                                selectedLabelColor = Color.White,
+                                containerColor = Color.White,
+                            ),
+                        )
+                    }
+                }
+            }
+
+            FormSection(title = "Operator & meters") {
+                BigField("Operator name", operator, { operator = it }, colors = fieldColors)
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    BigField(
+                        "Start meter",
+                        startMeter,
+                        { startMeter = it.filterNumeric() },
+                        KeyboardType.Decimal,
+                        modifier = Modifier.weight(1f),
+                        colors = fieldColors,
+                    )
+                    BigField(
+                        "End meter",
+                        endMeter,
+                        { endMeter = it.filterNumeric() },
+                        KeyboardType.Decimal,
+                        modifier = Modifier.weight(1f),
+                        colors = fieldColors,
                     )
                 }
             }
 
-            BigField(
-                label = "Operator name",
-                value = operator,
-                onChange = { operator = it },
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FormSection(title = "HSD fuel") {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    BigField(
+                        "Fuel open (L)",
+                        opening,
+                        { opening = it.filterNumeric() },
+                        KeyboardType.Decimal,
+                        modifier = Modifier.weight(1f),
+                        colors = fieldColors,
+                    )
+                    BigField(
+                        "HSD issue (L)",
+                        hsdIssue,
+                        { hsdIssue = it.filterNumeric() },
+                        KeyboardType.Decimal,
+                        modifier = Modifier.weight(1f),
+                        colors = fieldColors,
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
                 BigField(
-                    label = "Start meter",
-                    value = startMeter,
-                    onChange = { startMeter = it.filterNumeric() },
-                    keyboard = KeyboardType.Decimal,
-                    modifier = Modifier.weight(1f),
+                    "HSD consumption (L)",
+                    hsdConsumption,
+                    { hsdConsumption = it.filterNumeric() },
+                    KeyboardType.Decimal,
+                    colors = fieldColors,
                 )
-                BigField(
-                    label = "End meter",
-                    value = endMeter,
-                    onChange = { endMeter = it.filterNumeric() },
-                    keyboard = KeyboardType.Decimal,
-                    modifier = Modifier.weight(1f),
-                )
+                Spacer(Modifier.height(12.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(DscplBlue.copy(alpha = 0.08f))
+                        .border(1.dp, DscplBlue.copy(alpha = 0.15f), RoundedCornerShape(14.dp))
+                        .padding(14.dp),
+                ) {
+                    Text("Estimated closing", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("$closingPreview L", style = MaterialTheme.typography.headlineMedium, color = DscplBlueDark)
+                }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BigField(
-                    label = "Fuel open (L)",
-                    value = opening,
-                    onChange = { opening = it.filterNumeric() },
-                    keyboard = KeyboardType.Decimal,
-                    modifier = Modifier.weight(1f),
-                )
-                BigField(
-                    label = "HSD issue (L)",
-                    value = hsdIssue,
-                    onChange = { hsdIssue = it.filterNumeric() },
-                    keyboard = KeyboardType.Decimal,
-                    modifier = Modifier.weight(1f),
-                )
+
+            FormSection(title = "Work") {
+                BigField("Work done", work, { work = it }, singleLine = false, colors = fieldColors)
+                Spacer(Modifier.height(10.dp))
+                BigField("Remarks", remarks, { remarks = it }, singleLine = false, colors = fieldColors)
             }
-            BigField(
-                label = "HSD consumption (L)",
-                value = hsdConsumption,
-                onChange = { hsdConsumption = it.filterNumeric() },
-                keyboard = KeyboardType.Decimal,
-            )
-            Text("Closing ≈ $closingPreview L", style = MaterialTheme.typography.bodyMedium)
-            BigField(
-                label = "Work done",
-                value = work,
-                onChange = { work = it },
-                singleLine = false,
-            )
-            BigField(
-                label = "Remarks",
-                value = remarks,
-                onChange = { remarks = it },
-                singleLine = false,
-            )
 
             if (error != null) {
-                Text(error!!, color = MaterialTheme.colorScheme.error)
+                Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
 
-            Spacer(Modifier.height(8.dp))
             Button(
                 onClick = {
                     if (operator.isBlank()) {
@@ -227,9 +274,9 @@ fun LogFormScreen(
                         val label = machine.machineCode ?: machine.machineName ?: "Machine"
                         runCatching {
                             repository.saveLog(payload, label)
-                        }.onSuccess { (online, msg) ->
+                        }.onSuccess { (_, msg) ->
                             loading = false
-                            onDone(msg + if (online) "" else "")
+                            onDone(msg)
                         }.onFailure {
                             loading = false
                             error = it.message ?: "Save failed"
@@ -239,20 +286,44 @@ fun LogFormScreen(
                 enabled = !loading,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(54.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DscplRed,
+                    contentColor = Color.White,
+                ),
             ) {
                 if (loading) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.height(24.dp),
-                    )
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.height(22.dp))
                 } else {
-                    Text("Save log", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Save to Log Book", style = MaterialTheme.typography.labelLarge)
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(28.dp))
         }
+    }
+}
+
+@Composable
+private fun FormSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color.White)
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.8f), RoundedCornerShape(22.dp))
+            .padding(16.dp),
+    ) {
+        Text(
+            title.uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+        content()
     }
 }
 
@@ -264,6 +335,7 @@ private fun BigField(
     keyboard: KeyboardType = KeyboardType.Text,
     singleLine: Boolean = true,
     modifier: Modifier = Modifier.fillMaxWidth(),
+    colors: androidx.compose.material3.TextFieldColors,
 ) {
     OutlinedTextField(
         value = value,
@@ -273,7 +345,9 @@ private fun BigField(
         minLines = if (singleLine) 1 else 3,
         keyboardOptions = KeyboardOptions(keyboardType = keyboard),
         modifier = modifier,
-        textStyle = MaterialTheme.typography.titleMedium,
+        shape = RoundedCornerShape(14.dp),
+        textStyle = MaterialTheme.typography.bodyLarge,
+        colors = colors,
     )
 }
 
