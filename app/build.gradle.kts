@@ -15,10 +15,12 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        // Same origin API the web ERP uses (nginx → Dascon Postgres users/machines/log-book).
+        // Do not point at a separate Railway URL — that can be a different deploy/DB.
         buildConfigField(
             "String",
             "API_BASE_URL",
-            "\"https://dascon-backend-production.up.railway.app/api/\"",
+            "\"https://dasconsouraverp.com/api/\"",
         )
     }
 

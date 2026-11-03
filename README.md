@@ -22,7 +22,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 Phone needs **USB debugging** on (Developer options) and must show up in `adb devices`.
 
-API base URL is production Railway (`BuildConfig.API_BASE_URL`). Change in `app/build.gradle.kts` for staging.
+API base URL is the live ERP host (`https://dasconsouraverp.com/api/` in `BuildConfig.API_BASE_URL`) — same users DB as the website.
 
 ## Permissions needed in ERP
 
