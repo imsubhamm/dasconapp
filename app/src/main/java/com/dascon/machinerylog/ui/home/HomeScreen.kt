@@ -1,5 +1,6 @@
 package com.dascon.machinerylog.ui.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -35,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,15 +48,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dascon.machinerylog.R
 import com.dascon.machinerylog.data.api.MachineDto
 import com.dascon.machinerylog.data.api.MachineLogEntryDto
 import com.dascon.machinerylog.data.api.ProjectDto
 import com.dascon.machinerylog.data.local.Session
 import com.dascon.machinerylog.data.local.SessionStore
 import com.dascon.machinerylog.data.repo.LogRepository
+import com.dascon.machinerylog.ui.theme.DscplBlue
+import com.dascon.machinerylog.ui.theme.DscplRed
 import com.dascon.machinerylog.util.displayDate
 import com.dascon.machinerylog.util.formatYmd
 import com.dascon.machinerylog.util.parseYmd
@@ -109,13 +117,29 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = DscplBlue,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
                 title = {
-                    Column {
-                        Text("Machine Log", fontWeight = FontWeight.Bold)
-                        Text(
-                            session.displayName ?: session.email.orEmpty(),
-                            style = MaterialTheme.typography.bodySmall,
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.logo_dscpl),
+                            contentDescription = "DSCPL",
+                            modifier = Modifier
+                                .padding(end = 10.dp)
+                                .size(36.dp),
+                            contentScale = ContentScale.Fit,
                         )
+                        Column {
+                            Text("DSCPL Machine Log", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                            Text(
+                                session.displayName ?: session.email.orEmpty(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -155,6 +179,8 @@ fun HomeScreen(
                         val target = machines.firstOrNull { it.id !in loggedIds } ?: machines.first()
                         onNewLog(projectId, projectName.orEmpty(), target, logDate)
                     },
+                    containerColor = DscplRed,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "New log")
                 }

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Dascon Machine Log</string>
+    <string name="app_name">DSCPL Machine Log</string>
+    <string name="company_name">Dascon Sourav Commercial Private Limited</string>
+    <string name="company_tagline">Engineers and Contractors</string>
 </resources>
