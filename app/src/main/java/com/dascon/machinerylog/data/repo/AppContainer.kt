@@ -25,15 +25,20 @@ class AppContainer(context: Context) {
         .build()
 
     private val authInterceptor = Interceptor { chain ->
-        val token = runBlocking { sessionStore.session.first().token }
-        val req = if (!token.isNullOrBlank()) {
-            chain.request().newBuilder()
-                .header("Authorization", "Bearer $token")
-                .build()
-        } else {
-            chain.request()
+        val request = chain.request()
+        val path = request.url.encodedPath
+        // Never attach a stale Bearer to login — JWT filter returns 401 if token is present but invalid.
+        val isAuthCall = path.contains("/auth/login") || path.contains("/auth/forgot-password")
+        if (isAuthCall) {
+            return@Interceptor chain.proceed(request)
         }
-        chain.proceed(req)
+        val token = runBlocking { sessionStore.session.first().token }
+        val next = if (!token.isNullOrBlank()) {
+            request.newBuilder().header("Authorization", "Bearer $token").build()
+        } else {
+            request
+        }
+        chain.proceed(next)
     }
 
     private val client: OkHttpClient = OkHttpClient.Builder()
@@ -42,7 +47,11 @@ class AppContainer(context: Context) {
         .addInterceptor(authInterceptor)
         .addInterceptor(
             HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BASIC
+                level = if (BuildConfig.DEBUG) {
+                    HttpLoggingInterceptor.Level.BODY
+                } else {
+                    HttpLoggingInterceptor.Level.BASIC
+                }
             },
         )
         .build()

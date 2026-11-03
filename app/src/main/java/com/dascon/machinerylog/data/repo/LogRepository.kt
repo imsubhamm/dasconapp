@@ -7,10 +7,12 @@ import com.dascon.machinerylog.data.api.MachineLogEntryDto
 import com.dascon.machinerylog.data.api.MachineLogFormPayload
 import com.dascon.machinerylog.data.api.PriorFuelDto
 import com.dascon.machinerylog.data.api.ProjectDto
+import com.dascon.machinerylog.data.api.ApiResponse
 import com.dascon.machinerylog.data.local.PendingLogDao
 import com.dascon.machinerylog.data.local.PendingLogEntity
 import com.dascon.machinerylog.data.local.SessionStore
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 
@@ -18,20 +20,31 @@ class LogRepository(
     private val api: DasconApi,
     private val sessionStore: SessionStore,
     private val pendingDao: PendingLogDao,
-    moshi: Moshi,
+    private val moshi: Moshi,
 ) {
     private val payloadAdapter = moshi.adapter(MachineLogFormPayload::class.java)
+    private val apiErrorAdapter = moshi.adapter<ApiResponse<Any>>(
+        Types.newParameterizedType(ApiResponse::class.java, Any::class.java),
+    )
 
     val pendingLogs: Flow<List<PendingLogEntity>> = pendingDao.observeAll()
 
     suspend fun login(email: String, password: String): Result<Unit> = runCatching {
-        val res = api.login(LoginRequest(email.trim(), password))
+        // Mobile keyboards often capitalize the local-part; DB lookup is case-sensitive.
+        val normalizedEmail = email.trim().lowercase()
+        val response = api.login(LoginRequest(normalizedEmail, password))
+        if (!response.isSuccessful) {
+            val errBody = response.errorBody()?.string()
+            val serverMsg = errBody?.let { runCatching { apiErrorAdapter.fromJson(it)?.message }.getOrNull() }
+            error(serverMsg ?: "Login failed (${response.code()})")
+        }
+        val res = response.body() ?: error("Empty login response")
         val token = res.token?.takeIf { it.isNotBlank() }
             ?: error(res.message ?: "Login failed")
         val name = listOfNotNull(res.firstName, res.lastName)
             .joinToString(" ")
-            .ifBlank { res.email ?: email }
-        sessionStore.saveLogin(token, res.email ?: email, name)
+            .ifBlank { res.email ?: normalizedEmail }
+        sessionStore.saveLogin(token, res.email ?: normalizedEmail, name)
     }
 
     suspend fun logout() {

@@ -1,5 +1,6 @@
 package com.dascon.machinerylog.data.api
 
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -9,7 +10,7 @@ import retrofit2.http.Query
 
 interface DasconApi {
     @POST("auth/login")
-    suspend fun login(@Body body: LoginRequest): LoginResponse
+    suspend fun login(@Body body: LoginRequest): Response<LoginResponse>
 
     @GET("projects")
     suspend fun listProjects(): ApiResponse<List<ProjectDto>>
